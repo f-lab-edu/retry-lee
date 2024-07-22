@@ -1,0 +1,6 @@
+rootProject.name = 'booknstay'
+include 'api-admin'
+include 'api-user'
+include 'storage'
+include 'support'
+
