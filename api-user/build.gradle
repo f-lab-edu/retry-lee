@@ -1,6 +1,6 @@
-bootJar.enabled = false
+bootJar.enabled = true
 
-jar.enabled = true
+jar.enabled = false
 
 dependencies {
     implementation(project(":storage"))

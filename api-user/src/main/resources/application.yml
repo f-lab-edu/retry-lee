@@ -1,0 +1,10 @@
+spring:
+
+  application:
+    name: api-user
+
+  profiles:
+    active: local #Local, Dev, Prod 등으로 프로필 구분하여 환경 설정 할 수 있다.
+
+server:
+  port: 8081
