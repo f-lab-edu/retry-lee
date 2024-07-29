@@ -14,8 +14,6 @@ repositories {
 	mavenCentral()
 }
 
-bootJar.enabled = false
-
 subprojects {
 	group = 'com.v1'
 	version = '0.0.1-SNAPSHOT'
