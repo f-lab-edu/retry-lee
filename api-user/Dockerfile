@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21
 
 # 업데이트 및 xargs를 위한 findutils 설치
-RUN apt-get update && apt-get install -y findutils
+#RUN apt-get update && apt-get install -y findutils
 
 # 애플리케이션 디렉토리 생성
 RUN mkdir -p /app
