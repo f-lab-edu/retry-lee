@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-public class UserDto {
+public class UserRequestDto {
 
     @Getter
     @AllArgsConstructor
@@ -24,5 +24,14 @@ public class UserDto {
         @NotBlank
         @Size(min = 2, max = 10, message = "최소 2자, 최대 10자로 생성하세요")
         private String nickname;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class UserSignInReq{
+        @NotBlank
+        private String email;
+        @NotBlank
+        private String password;
     }
 }

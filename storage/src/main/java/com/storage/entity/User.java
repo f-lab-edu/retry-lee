@@ -5,6 +5,7 @@ import lombok.*;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -14,8 +15,9 @@ public class User extends BaseEntity {
     private Long userId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", foreignKey = @ForeignKey(name = "user_account_id_fk"))
+    @JoinColumn(name = "account_id")
     private Account account;
     private String nickname;
     private String grade;
+    private String refreshToken;
 }

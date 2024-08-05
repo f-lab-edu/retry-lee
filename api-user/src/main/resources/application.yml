@@ -9,5 +9,12 @@ spring:
     import:
       - db-config.yml
 
+jwt:
+  access-token:
+    expire: 30m
+  refresh-token:
+    expire: 14d
+  secret: jwtwhatevertokenjwtwhatevertokenjwtwhatevertoken
+
 server:
   port: 8081
