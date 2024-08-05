@@ -36,6 +36,15 @@ public class JwtTokenProvider {
                 .get("userId", Long.class);
     }
 
+    public String getEmail(String token){
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("email", String.class);
+    }
+
     public Boolean isTokenExpired(String token){
         return Jwts.parser()
                 .verifyWith(secretKey)

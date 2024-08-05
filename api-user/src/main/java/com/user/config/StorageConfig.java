@@ -6,19 +6,26 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
 @Configuration
 @EnableJpaRepositories(basePackages = "com.storage.repository")
 @EntityScan(basePackages = "com.storage.entity")
-@EnableJpaAuditing
+@EnableJpaAuditing(auditorAwareRef = "auditorProvider")
 public class StorageConfig {
+
     @Bean
     public AuditorAware<String> auditorProvider() {
-        /**
-         * 이 부분은 로그인 API 개발시 수정하도록 하겠습니다.
-         */
-        return () -> Optional.of("system");
+        return () -> {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+                return Optional.of("system");
+            }
+            return Optional.of(authentication.getName());
+        };
     }
 }
