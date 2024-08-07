@@ -7,7 +7,9 @@ import com.storage.repository.UserRepository;
 import com.user.dto.request.TokenRequestDto;
 import com.user.dto.request.UserRequestDto;
 import com.user.dto.request.UserRequestDto.UserRegisterReq;
+import com.user.dto.response.TokenResponseDto;
 import com.user.dto.response.UserResponseDto.SignInRes;
+import com.user.utils.enums.TokenType;
 import com.user.utils.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -63,16 +65,10 @@ public class AuthService {
             throw new RuntimeException("비밀번호 확인");
         }
         // 토큰 생성
-        String accessToken = jwtTokenProvider.generateToken("Access", user.getUserId(), new Date());
-        String refreshToken;
+        String accessToken = jwtTokenProvider.generateToken(TokenType.ACCESS, user.getUserId(), new Date());
+        String refreshToken = jwtTokenProvider.generateToken(TokenType.REFRESH, user.getUserId(), new Date());
 
-        // Refresh Token 확인
-        if (user.getRefreshToken() == null || jwtTokenProvider.isTokenExpired(user.getRefreshToken())) {
-            refreshToken = jwtTokenProvider.generateToken("Refresh", user.getUserId(), new Date());
-            user.setRefreshToken(refreshToken);
-        } else {
-            refreshToken = user.getRefreshToken();
-        }
+        user.setRefreshToken(refreshToken);
 
         return SignInRes.builder()
                 .accessToken(accessToken)
@@ -85,11 +81,21 @@ public class AuthService {
      * @param req
      * @return
      */
-    public String reissueToken(TokenRequestDto req) {
-        Long userId = jwtTokenProvider.getUserId(req.getRefreshToken());
+    @Transactional
+    public TokenResponseDto getAccessTokenByRefreshToken(TokenRequestDto req) {
+        Long userId = jwtTokenProvider.getClaim(req.getRefreshToken(), "userId", Long.class);
+
         User user = userRepository.findByUserIdAndRefreshToken(userId, req.getRefreshToken())
                 .orElseThrow(() -> new RuntimeException(""));// TODO custom exception 추가
 
-        return jwtTokenProvider.generateToken("Access", user.getUserId(), new Date());
+        String accessToken = jwtTokenProvider.generateToken(TokenType.ACCESS, user.getUserId(), new Date());
+        String refreshToken = jwtTokenProvider.generateToken(TokenType.REFRESH, user.getUserId(), new Date());
+
+        user.setRefreshToken(refreshToken);
+
+        return TokenResponseDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 }

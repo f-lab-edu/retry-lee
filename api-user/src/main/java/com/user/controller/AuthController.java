@@ -19,21 +19,21 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register")
+    @PostMapping("/signUp")
     public ResponseEntity signup(@RequestBody @Valid UserRegisterReq req) {
         authService.register(req);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<SignInRes> singIn(@RequestBody @Valid UserSignInReq req) {
+    @PostMapping("/signIn")
+    public ResponseEntity<SignInRes> signIn(@RequestBody @Valid UserSignInReq req) {
         SignInRes signInRes = authService.signIn(req);
         return ResponseEntity.ok(signInRes);
     }
 
-    @PatchMapping("/reissue")
+    @PostMapping("/reissueToken")
     public ResponseEntity<TokenResponseDto> reissueToken(@RequestBody @Valid TokenRequestDto req){
-        String accessToken = authService.reissueToken(req);
-        return ResponseEntity.ok(new TokenResponseDto(accessToken));
+        TokenResponseDto res = authService.getAccessTokenByRefreshToken(req);
+        return ResponseEntity.ok(res);
     }
 }
