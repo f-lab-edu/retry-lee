@@ -2,6 +2,36 @@ bootJar.enabled = true
 
 jar.enabled = false
 
+sourceSets {
+    unitTest {
+        java {
+            srcDir 'src/unitTest/java'
+        }
+        resources {
+            srcDir 'src/unitTest/resources'
+        }
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+    e2eTest {
+        java {
+            srcDir 'src/e2eTest/java'
+        }
+        resources {
+            srcDir 'src/e2eTest/resources'
+        }
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+}
+
+configurations {
+    unitTestImplementation.extendsFrom testImplementation
+    unitTestRuntimeOnly.extendsFrom testRuntimeOnly
+    e2eTestImplementation.extendsFrom testImplementation
+    e2eTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
     implementation(project(":storage"))
     implementation(project(":support"))
@@ -14,7 +44,33 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+    // E2E Test
+    e2eTestImplementation("org.testcontainers:junit-jupiter")
+    e2eTestImplementation("org.springframework.boot:spring-boot-testcontainers")
+    e2eTestImplementation("org.testcontainers:mysql")
 
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+
+
+tasks.register('unitTest', Test) {
+    description = 'Runs unit tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.unitTest.output.classesDirs
+    classpath = sourceSets.unitTest.runtimeClasspath
+    useJUnitPlatform()
+}
+
+tasks.register('e2eTest', Test) {
+    description = 'Runs e2e tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.e2eTest.output.classesDirs
+    classpath = sourceSets.e2eTest.runtimeClasspath
+    useJUnitPlatform()
+}
+
+tasks.named('processE2eTestResources') {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE // 중복된 리소스 처리 전략
 }
