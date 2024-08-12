@@ -14,7 +14,31 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'mysql:mysql-connector-java'
+}
 
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+//전체 테스트
+test {
+    description = 'Runs the total tests.'
+    useJUnitPlatform()
+}
+
+//유닛 테스트
+tasks.register('UnitTest', Test) {
+    group = 'verification'
+    description = 'Runs the Unit tests.'
+    useJUnitPlatform {
+        includeTags 'UnitTest'
+    }
+}
+
+//통합 테스트
+tasks.register('E2eTest', Test) {
+    group = 'verification'
+    description = 'Runs the E2e tests.'
+    useJUnitPlatform {
+        includeTags 'E2eTest'
+    }
 }
