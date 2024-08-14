@@ -7,6 +7,7 @@ import com.storage.repository.UserRepository;
 import com.user.dto.request.UserRequestDto.UserRegisterReq;
 import com.user.exception.CustomException;
 import com.user.service.AuthService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,8 @@ public class AuthServiceUnitTest {
     private AuthService authService;
 
     @Test
-    void testSuccessfulRegistration() {
+    @DisplayName("정상적으로 회원가입이 성공한다.")
+    void successfulRegistration() {
         // Given
         UserRegisterReq request = new UserRegisterReq("test@test.com", "Password1!", "testuser");
 
@@ -58,7 +60,8 @@ public class AuthServiceUnitTest {
     }
 
     @Test
-    void testRegistrationWithExistingEmail() {
+    @DisplayName("이메일이 존재하는 경우 회원가입이 실패하고 예외가 반환된다.")
+    void registrationWithExistingEmail() {
         // Given
         UserRegisterReq request = new UserRegisterReq("existing@test.com", "Password1!", "testuser");
 
