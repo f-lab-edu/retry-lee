@@ -1,4 +1,4 @@
-package e2eTest;
+package com.user.e2eTest;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -30,7 +30,7 @@ public class BaseE2eTest {
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.driver-class-name", MySQLContainer::getDriverClassName);
-        registry.add("spring.datasource.jdbc-url", MySQLContainer::getJdbcUrl);
+        registry.add("spring.datasource.url", MySQLContainer::getJdbcUrl);
         registry.add("spring.datasource.username", MySQLContainer::getUsername);
         registry.add("spring.datasource.password", MySQLContainer::getPassword);
     }

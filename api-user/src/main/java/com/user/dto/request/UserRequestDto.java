@@ -17,7 +17,6 @@ public class UserRequestDto {
         private String email;
 
         @NotBlank
-        @Size(min = 6, max = 20)
         @Pattern(regexp = "(?=.*[0-9])(?=.*[A-Za-z])(?=.*\\W)(?=\\S+$).{8,16}", message = "8 ~ 16자로 생성하세요. 대소문자, 특수문자, 숫자를 포함하여야 합니다.")
         private String password;
 

@@ -1,8 +1,19 @@
 spring:
+  application:
+      name: api-user-test
   jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
     properties:
       hibernate:
         format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+jwt:
+  access-token:
+    expire: 30m
+  refresh-token:
+    expire: 14d
+  secret: jwtwhatevertokenjwtwhatevertokenjwtwhatevertoken

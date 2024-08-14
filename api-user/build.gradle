@@ -16,7 +16,7 @@ dependencies {
 
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mysql'
-    testImplementation 'mysql:mysql-connector-java'
+    testImplementation 'mysql:mysql-connector-java:8.0.33'
 }
 
 //전체 테스트
