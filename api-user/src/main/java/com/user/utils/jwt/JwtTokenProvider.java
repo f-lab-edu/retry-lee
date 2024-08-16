@@ -1,6 +1,7 @@
 package com.user.utils.jwt;
 
 import com.user.utils.enums.TokenType;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,5 +52,14 @@ public class JwtTokenProvider {
             return bearerToken.substring(6).trim();
         }
         return "";
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            return true;
+        } catch (JwtException e) {
+            return false;
+        }
     }
 }

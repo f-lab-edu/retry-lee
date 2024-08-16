@@ -4,9 +4,15 @@ import com.storage.entity.Account;
 import com.storage.entity.User;
 import com.storage.repository.AccountRepository;
 import com.storage.repository.UserRepository;
+import com.user.dto.request.TokenRequestDto;
 import com.user.dto.request.UserRequestDto.UserRegisterReq;
+import com.user.dto.request.UserRequestDto.UserSignInReq;
+import com.user.dto.response.TokenResponseDto;
+import com.user.dto.response.UserResponseDto.SignInRes;
 import com.user.exception.CustomException;
 import com.user.service.AuthService;
+import com.user.utils.enums.TokenType;
+import com.user.utils.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,7 +22,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Date;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -33,17 +43,19 @@ public class AuthServiceUnitTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private JwtTokenProvider jwtTokenProvider;
+
     @InjectMocks
     private AuthService authService;
 
     @Test
-    @DisplayName("정상적으로 회원가입이 성공한다.")
-    void successfulRegistration() {
+    @DisplayName("Successfully register an account")
+    void successRegister() {
         // Given
         UserRegisterReq request = new UserRegisterReq("test@test.com", "Password1!", "testuser");
 
         // When
-
         when(accountRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG");
         authService.register(request);
@@ -60,8 +72,8 @@ public class AuthServiceUnitTest {
     }
 
     @Test
-    @DisplayName("이메일이 존재하는 경우 회원가입이 실패하고 예외가 반환된다.")
-    void registrationWithExistingEmail() {
+    @DisplayName("Fail to register an account with duplicate email")
+    void registerWithExistingEmail() {
         // Given
         UserRegisterReq request = new UserRegisterReq("existing@test.com", "Password1!", "testuser");
 
@@ -71,5 +83,147 @@ public class AuthServiceUnitTest {
         assertThrows(CustomException.class, () -> authService.register(request));
         verify(accountRepository, never()).save(any(Account.class));
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Successfully sign in")
+    void signInSuccess() {
+        // Given
+        UserSignInReq req = new UserSignInReq("test@email.com", "Password1!");
+        Account account = Account.builder()
+                .accountId(1L)
+                .email("test@email.com")
+                .password("$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG")
+                .build();
+        User user = User.builder()
+                .userId(1L)
+                .account(account)
+                .nickname("yogurt")
+                .grade("Silver")
+                .build();
+
+        // When
+        when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(req.getPassword(), user.getAccount().getPassword())).thenReturn(true);
+        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), anyLong(), any(Date.class))).thenReturn("accessToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), anyLong(), any(Date.class))).thenReturn("refreshToken");
+
+        SignInRes result = authService.signIn(req);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("accessToken", result.getAccessToken());
+        assertEquals("refreshToken", result.getRefreshToken());
+
+        // Verify that findByEmail was called
+        verify(userRepository).findByEmail(req.getEmail());
+        // Verify that passwordEncoder.matches was called
+        verify(passwordEncoder).matches(req.getPassword(), user.getAccount().getPassword());
+        // Verify that jwtTokenProvider.generateToken was called twice (for ACCESS and REFRESH tokens)
+        verify(jwtTokenProvider, times(2)).generateToken(any(TokenType.class), anyLong(), any(Date.class));
+
+    }
+
+    @Test
+    @DisplayName("Fail to sign in with non-existent user")
+    void failSignInWithUserNotFound() {
+        // Given
+        UserSignInReq req = new UserSignInReq("test@email.com", "Password1!");
+
+        // When & Then
+        when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.empty());
+
+        assertThrows(CustomException.class, () -> authService.signIn(req));
+
+        // Verify that findByEmail was called
+        verify(userRepository).findByEmail(req.getEmail());
+    }
+
+    @Test
+    @DisplayName("Fail to sign in with incorrect password")
+    void failSignInIncorrectPassword() {
+        // Given
+        UserSignInReq req = new UserSignInReq("test@email.com", "Password1!");
+        Account account = Account.builder()
+                .accountId(1L)
+                .email("test@email.com")
+                .password("encodedPassword")
+                .build();
+        User user = User.builder()
+                .userId(1L)
+                .account(account)
+                .nickname("testUser")
+                .grade("NORMAL")
+                .build();
+
+        // When & Then
+        when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(req.getPassword(), user.getAccount().getPassword())).thenReturn(false);
+
+        assertThrows(CustomException.class, () -> authService.signIn(req));
+
+        verify(userRepository).findByEmail(req.getEmail());
+        verify(passwordEncoder).matches(req.getPassword(), user.getAccount().getPassword());
+    }
+
+    @Test
+    @DisplayName("Successfully reissue refresh tokens")
+    void getAccessTokenByRefreshToken() {
+        // Given
+        TokenRequestDto req = new TokenRequestDto("validRefreshToken");
+        User user = User.builder().userId(1L).refreshToken("validRefreshToken").build();
+
+        // When
+        when(jwtTokenProvider.validateToken("validRefreshToken")).thenReturn(true);
+        when(jwtTokenProvider.getClaim("validRefreshToken", "userId", Long.class)).thenReturn(1L);
+        when(userRepository.findByUserIdAndRefreshToken(1L, "validRefreshToken")).thenReturn(Optional.of(user));
+        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), eq(1L), any(Date.class))).thenReturn("newAccessToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), eq(1L), any(Date.class))).thenReturn("newRefreshToken");
+
+        TokenResponseDto response = authService.getAccessTokenByRefreshToken(req);
+
+        // Then
+        assertNotNull(response);
+        assertEquals("newAccessToken", response.getAccessToken());
+        assertEquals("newRefreshToken", response.getRefreshToken());
+        assertEquals("newRefreshToken", user.getRefreshToken());
+
+        verify(jwtTokenProvider).validateToken("validRefreshToken");
+        verify(jwtTokenProvider).getClaim("validRefreshToken", "userId", Long.class);
+        verify(userRepository).findByUserIdAndRefreshToken(1L, "validRefreshToken");
+        verify(jwtTokenProvider, times(2)).generateToken(any(), eq(1L), any(Date.class));
+    }
+
+    @Test
+    @DisplayName("Fail to refresh tokens with expired refresh token")
+    void failReissueRefreshTokenWithExpiredToken() {
+        // Given
+        String expiredRefreshToken = "expiredRefreshToken";
+        TokenRequestDto req = new TokenRequestDto(expiredRefreshToken);
+
+        // When & Then
+        when(jwtTokenProvider.validateToken(expiredRefreshToken)).thenReturn(false);
+
+        assertThrows(CustomException.class, () -> authService.getAccessTokenByRefreshToken(req));
+        verify(jwtTokenProvider).validateToken(expiredRefreshToken);
+    }
+
+    @Test
+    @DisplayName("Fail to refresh tokens when user not found")
+    void failReissueRefreshTokenByUserNotFound() {
+        // Given
+        String validRefreshToken = "validRefreshToken";
+        TokenRequestDto req = new TokenRequestDto(validRefreshToken);
+
+        // When & Then
+        when(jwtTokenProvider.validateToken(validRefreshToken)).thenReturn(true);
+        when(jwtTokenProvider.getClaim(validRefreshToken, "userId", Long.class)).thenReturn(1L);
+        when(userRepository.findByUserIdAndRefreshToken(1L, validRefreshToken)).thenReturn(Optional.empty());
+
+        assertThrows(CustomException.class, () -> authService.getAccessTokenByRefreshToken(req));
+
+        verify(jwtTokenProvider).validateToken(validRefreshToken);
+        verify(jwtTokenProvider).getClaim(validRefreshToken, "userId", Long.class);
+        verify(userRepository).findByUserIdAndRefreshToken(1L, validRefreshToken);
     }
 }
