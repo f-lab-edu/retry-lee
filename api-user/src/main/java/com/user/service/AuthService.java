@@ -61,10 +61,10 @@ public class AuthService {
     @Transactional
     public SignInRes signIn(UserRequestDto.UserSignInReq req) {
         User user = userRepository.findByEmail(req.getEmail())
-                .orElseThrow(() -> new RuntimeException("유효한 이메일이 아닙니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.ERROR_BE1003));
 
         if(!passwordEncoder.matches(req.getPassword(), user.getAccount().getPassword())){
-            throw new RuntimeException("비밀번호 확인");
+            throw new CustomException(ErrorCode.ERROR_BE1003);
         }
         // 토큰 생성
         String accessToken = jwtTokenProvider.generateToken(TokenType.ACCESS, user.getUserId(), new Date());
@@ -85,10 +85,14 @@ public class AuthService {
      */
     @Transactional
     public TokenResponseDto getAccessTokenByRefreshToken(TokenRequestDto req) {
+        if (!jwtTokenProvider.validateToken(req.getRefreshToken())) {
+            throw new CustomException(ErrorCode.ERROR_BE1005);
+        }
+
         Long userId = jwtTokenProvider.getClaim(req.getRefreshToken(), "userId", Long.class);
 
         User user = userRepository.findByUserIdAndRefreshToken(userId, req.getRefreshToken())
-                .orElseThrow(() -> new RuntimeException(""));// TODO custom exception 추가
+                .orElseThrow(() -> new CustomException(ErrorCode.ERROR_BE1004));
 
         String accessToken = jwtTokenProvider.generateToken(TokenType.ACCESS, user.getUserId(), new Date());
         String refreshToken = jwtTokenProvider.generateToken(TokenType.REFRESH, user.getUserId(), new Date());

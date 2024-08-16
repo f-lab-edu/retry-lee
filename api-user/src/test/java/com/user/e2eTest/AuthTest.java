@@ -1,8 +1,12 @@
 package com.user.e2eTest;
 
 import com.storage.entity.Account;
+import com.storage.entity.User;
 import com.storage.repository.AccountRepository;
+import com.storage.repository.UserRepository;
 import com.user.dto.request.UserRequestDto.UserRegisterReq;
+import com.user.dto.request.UserRequestDto.UserSignInReq;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -10,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,54 +27,75 @@ public class AuthTest extends BaseE2eTest {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private static final String EMAIL = "test@test.com";
+    private static final String PASSWORD = "Testtest11!!";
+    private static final String NICKNAME = "yogurt";
+
+    @BeforeEach
+    void setUp() {
+        // Create Account Entity
+        Account account = Account.builder()
+                .email(EMAIL)
+                .password(passwordEncoder.encode(PASSWORD))
+                .build();
+        accountRepository.save(account);
+
+        // Create User Entity
+        User user = User.builder()
+                .account(account)
+                .nickname(NICKNAME)
+                .grade("Silver")
+                .build();
+        userRepository.save(user);
+    }
+
     @Test
-    @DisplayName("정상적으로 회원가입에 성공한다.")
-    public void accountRegistration() {
-        // 회원가입 요청 데이터 생성
+    @DisplayName("Successfully register an account")
+    public void registerAccount() {
+        // Create account registration request data
         UserRegisterReq request = new UserRegisterReq("testSuccess@test.com", "Testtest11!!","yogurt");
 
-        // POST 요청 전송
+        // Send POST request
         ResponseEntity<String> response = testRestTemplate.postForEntity(
-                "http://localhost:" + port + "/auth/signUp",
+                "/auth/signUp",
                 request,
                 String.class
         );
-        // 응답 검증
+        // Verify response
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
     @Test
-    @DisplayName("중복된 이메일일 경우 회원가입에 실패한다.")
-    public void failedAccountRegistrationWithExistingEmail() {
-        // 기존 계정 생성
-        Account existingAccount = Account.builder()
-                .accountId(0L)
-                .email("test@test.com")
-                .password("Encoded11!!")
-                .build();
-        accountRepository.save(existingAccount);
-
-        // 동일한 이메일로 회원가입 요청 데이터 생성
+    @DisplayName("Fail to register an account with duplicate email")
+    public void failRegisterAccountWithDuplicateEmail() {
+        // Create account registration request data with existing email
         UserRegisterReq request = new UserRegisterReq("test@test.com", "Testtest11!!", "yogurt");
 
-        // POST 요청 전송
+        // Send POST request
         ResponseEntity<String> response = testRestTemplate.postForEntity(
-                "http://localhost:" + port + "/auth/signUp",
+                "/auth/signUp",
                 request,
                 String.class
         );
 
-        // 응답 검증
+        // Verify response
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).contains("BE1001");
     }
 
     @Test
-    @DisplayName("이메일의 형식이 올바르지 않은 경우 작성된 메시지가 반환된다.")
+    @DisplayName("Fail to register an account with invalid email format")
     public void invalidEmailFormat() {
+        // Create account registration request data with existing email
         UserRegisterReq request = new UserRegisterReq("invalidemail", "Testtest11!!", "yogurt");
         ResponseEntity<String> response = testRestTemplate.postForEntity(
-                "http://localhost:" + port + "/auth/signUp",
+                "/auth/signUp",
                 request,
                 String.class
         );
@@ -78,11 +104,11 @@ public class AuthTest extends BaseE2eTest {
     }
 
     @Test
-    @DisplayName("비밀번호의 형식이 올바르지 않은 경우 작성된 메시지가 반환된다.")
+    @DisplayName("Fail to register an account with invalid password format")
     public void invalidPasswordFormat() {
         UserRegisterReq request = new UserRegisterReq("test@test.com", "weak", "yogurt");
         ResponseEntity<String> response = testRestTemplate.postForEntity(
-                "http://localhost:" + port + "/auth/signUp",
+                "/auth/signUp",
                 request,
                 String.class
         );
@@ -91,15 +117,96 @@ public class AuthTest extends BaseE2eTest {
     }
 
     @Test
-    @DisplayName("닉네임의 글자 길이가 범위에 맞지 않는 경우 작성된 메시지가 반환된다.")
+    @DisplayName("Fail to register an account with invalid nickname length")
     public void invalidNicknameLength() {
         UserRegisterReq request = new UserRegisterReq("test@test.com", "Testtest11!!", "a");
         ResponseEntity<String> response = testRestTemplate.postForEntity(
-                "http://localhost:" + port + "/auth/signUp",
+                "/auth/signUp",
                 request,
                 String.class
         );
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).contains("최소 2자, 최대 10자로 생성하세요");
     }
+
+    @Test
+    @DisplayName("Success login to an account")
+    public void succeedLogin() {
+        UserSignInReq request = new UserSignInReq(EMAIL, PASSWORD);
+
+        ResponseEntity<String> response = testRestTemplate.postForEntity(
+                "/auth/signIn",
+                request,
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("accessToken");
+        assertThat(response.getBody()).contains("refreshToken");
+
+        // Verify that refreshToken is saved in User entity
+        User updatedUser = userRepository.findByEmail(EMAIL).orElseThrow();
+        assertThat(updatedUser.getRefreshToken()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Fail to login with non-existent email")
+    public void loginFailWithNonExistentEmail() {
+        UserSignInReq request = new UserSignInReq("nonexist@test.com", PASSWORD);
+
+        ResponseEntity<String> response = testRestTemplate.postForEntity(
+                "/auth/signIn",
+                request,
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).contains("로그인 실패, 이메일이나 비밀번호를 확인해주세요.");
+    }
+
+    @Test
+    @DisplayName("Fail to login with incorrect password")
+    public void loginFailWithIncorrectPassword() {
+        UserSignInReq request = new UserSignInReq(EMAIL, "WrongPassword11!!");
+
+        ResponseEntity<String> response = testRestTemplate.postForEntity(
+                "/auth/signIn",
+                request,
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).contains("로그인 실패, 이메일이나 비밀번호를 확인해주세요.");
+    }
+
+    @Test
+    @DisplayName("Fail to login with invalid email format")
+    public void loginFailWithInvalidEmailFormat() {
+        UserSignInReq request = new UserSignInReq("invalidemail", PASSWORD);
+
+        ResponseEntity<String> response = testRestTemplate.postForEntity(
+                "/auth/signIn",
+                request,
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).contains("이메일 형식에 맞게 입력하세요.");
+    }
+
+    @Test
+    @DisplayName("Fail to login with invalid password format")
+    public void loginFailWithInvalidPasswordFormat() {
+        UserSignInReq request = new UserSignInReq(EMAIL, "weak");
+
+        ResponseEntity<String> response = testRestTemplate.postForEntity(
+                "/auth/signIn",
+                request,
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).contains("8 ~ 16자로 입력하세요.");
+    }
+
 }

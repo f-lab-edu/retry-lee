@@ -3,7 +3,11 @@ package com.user.unitTest.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.user.config.SecurityConfig;
 import com.user.controller.AuthController;
+import com.user.dto.request.TokenRequestDto;
 import com.user.dto.request.UserRequestDto.UserRegisterReq;
+import com.user.dto.request.UserRequestDto.UserSignInReq;
+import com.user.dto.response.TokenResponseDto;
+import com.user.dto.response.UserResponseDto.SignInRes;
 import com.user.exception.CustomException;
 import com.user.exception.type.ErrorCode;
 import com.user.security.CustomUserDetailService;
@@ -20,10 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,8 +59,7 @@ public class AuthControllerUnitTest {
         mockMvc.perform(post("/auth/signUp")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                .andDo(print());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -72,8 +73,7 @@ public class AuthControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("회원가입 실패(이메일 중복), 이메일을 확인해주세요."))
-                .andDo(print());
+                .andExpect(jsonPath("$.message").value("회원가입 실패(이메일 중복), 이메일을 확인해주세요."));
     }
 
     @Test
@@ -85,8 +85,7 @@ public class AuthControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("이메일 형식에 맞게 입력하세요."))
-                .andDo(print());
+                .andExpect(jsonPath("$.message").value("이메일 형식에 맞게 입력하세요."));
     }
 
     @Test
@@ -98,8 +97,7 @@ public class AuthControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("8 ~ 16자로 생성하세요. 대소문자, 특수문자, 숫자를 포함하여야 합니다."))
-                .andDo(print());
+                .andExpect(jsonPath("$.message").value("8 ~ 16자로 생성하세요. 대소문자, 특수문자, 숫자를 포함하여야 합니다."));
     }
 
     @Test
@@ -111,7 +109,90 @@ public class AuthControllerUnitTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("최소 2자, 최대 10자로 생성하세요"))
-                .andDo(print());
+                .andExpect(jsonPath("$.message").value("최소 2자, 최대 10자로 생성하세요"));
+    }
+
+    @Test
+    @DisplayName("Successfully sign in")
+    void successSignIn() throws Exception {
+        UserSignInReq req = new UserSignInReq("test@example.com", "Password123!");
+        SignInRes res = new SignInRes("accessToken", "refreshToken");
+
+        when(authService.signIn(any(UserSignInReq.class))).thenReturn(res);
+
+        mockMvc.perform(post("/auth/signIn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("accessToken"))
+                .andExpect(jsonPath("$.refreshToken").value("refreshToken"));
+    }
+
+    @Test
+    @DisplayName("Fail to sign in with invalid email format")
+    void failSignInWithInvalidEmailFormat() throws Exception {
+        UserSignInReq req = new UserSignInReq("invalidemail", "Password1!");
+
+        mockMvc.perform(post("/auth/signIn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BE1002"));
+    }
+
+    @Test
+    @DisplayName("Fail to sign in with invalid password format")
+    void failSignInWithInvalidPasswordFormat() throws Exception {
+        UserSignInReq req = new UserSignInReq("test@example.com", "weakpassword");
+
+        mockMvc.perform(post("/auth/signIn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BE1002"));
+    }
+
+    @Test
+    @DisplayName("Fail to sign in with invalid credentials")
+    void failSignInWithInvalidCredentials() throws Exception {
+        UserSignInReq req = new UserSignInReq("user@example.com", "Password1!");
+
+        when(authService.signIn(any(UserSignInReq.class))).thenThrow(new CustomException(ErrorCode.ERROR_BE1003));
+
+        mockMvc.perform(post("/auth/signIn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BE1003"));
+    }
+
+    @Test
+    @DisplayName("Successfully reissue token")
+    void successReissueToken() throws Exception {
+        TokenRequestDto req = new TokenRequestDto("validRefreshToken");
+        TokenResponseDto res = new TokenResponseDto("newAccessToken", "newRefreshToken");
+
+        when(authService.getAccessTokenByRefreshToken(any(TokenRequestDto.class))).thenReturn(res);
+
+        mockMvc.perform(post("/auth/reissueToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("newAccessToken"))
+                .andExpect(jsonPath("$.refreshToken").value("newRefreshToken"));
+    }
+
+    @Test
+    @DisplayName("Fail to reissue token with invalid refresh token")
+    void failReissueTokenWithInvalidRefreshToken() throws Exception {
+        TokenRequestDto req = new TokenRequestDto("invalidRefreshToken");
+
+        when(authService.getAccessTokenByRefreshToken(any(TokenRequestDto.class))).thenThrow(new CustomException(ErrorCode.ERROR_BE1005));
+
+        mockMvc.perform(post("/auth/reissueToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BE1005"));
     }
 }

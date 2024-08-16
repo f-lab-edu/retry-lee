@@ -29,8 +29,10 @@ public class UserRequestDto {
     @AllArgsConstructor
     public static class UserSignInReq{
         @NotBlank
+        @Pattern(regexp = "^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "이메일 형식에 맞게 입력하세요.")
         private String email;
         @NotBlank
+        @Pattern(regexp = "(?=.*[0-9])(?=.*[A-Za-z])(?=.*\\W)(?=\\S+$).{8,16}", message = "8 ~ 16자로 입력하세요.")
         private String password;
     }
 }
