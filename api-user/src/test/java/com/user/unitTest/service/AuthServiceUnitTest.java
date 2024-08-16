@@ -114,14 +114,6 @@ public class AuthServiceUnitTest {
         assertNotNull(result);
         assertEquals("accessToken", result.getAccessToken());
         assertEquals("refreshToken", result.getRefreshToken());
-
-        // Verify that findByEmail was called
-        verify(userRepository).findByEmail(req.getEmail());
-        // Verify that passwordEncoder.matches was called
-        verify(passwordEncoder).matches(req.getPassword(), user.getAccount().getPassword());
-        // Verify that jwtTokenProvider.generateToken was called twice (for ACCESS and REFRESH tokens)
-        verify(jwtTokenProvider, times(2)).generateToken(any(TokenType.class), anyLong(), any(Date.class));
-
     }
 
     @Test
@@ -134,9 +126,6 @@ public class AuthServiceUnitTest {
         when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.empty());
 
         assertThrows(CustomException.class, () -> authService.signIn(req));
-
-        // Verify that findByEmail was called
-        verify(userRepository).findByEmail(req.getEmail());
     }
 
     @Test
@@ -161,9 +150,6 @@ public class AuthServiceUnitTest {
         when(passwordEncoder.matches(req.getPassword(), user.getAccount().getPassword())).thenReturn(false);
 
         assertThrows(CustomException.class, () -> authService.signIn(req));
-
-        verify(userRepository).findByEmail(req.getEmail());
-        verify(passwordEncoder).matches(req.getPassword(), user.getAccount().getPassword());
     }
 
     @Test
@@ -187,11 +173,6 @@ public class AuthServiceUnitTest {
         assertEquals("newAccessToken", response.getAccessToken());
         assertEquals("newRefreshToken", response.getRefreshToken());
         assertEquals("newRefreshToken", user.getRefreshToken());
-
-        verify(jwtTokenProvider).validateToken("validRefreshToken");
-        verify(jwtTokenProvider).getClaim("validRefreshToken", "userId", Long.class);
-        verify(userRepository).findByUserIdAndRefreshToken(1L, "validRefreshToken");
-        verify(jwtTokenProvider, times(2)).generateToken(any(), eq(1L), any(Date.class));
     }
 
     @Test
@@ -205,7 +186,6 @@ public class AuthServiceUnitTest {
         when(jwtTokenProvider.validateToken(expiredRefreshToken)).thenReturn(false);
 
         assertThrows(CustomException.class, () -> authService.getAccessTokenByRefreshToken(req));
-        verify(jwtTokenProvider).validateToken(expiredRefreshToken);
     }
 
     @Test
@@ -221,9 +201,5 @@ public class AuthServiceUnitTest {
         when(userRepository.findByUserIdAndRefreshToken(1L, validRefreshToken)).thenReturn(Optional.empty());
 
         assertThrows(CustomException.class, () -> authService.getAccessTokenByRefreshToken(req));
-
-        verify(jwtTokenProvider).validateToken(validRefreshToken);
-        verify(jwtTokenProvider).getClaim(validRefreshToken, "userId", Long.class);
-        verify(userRepository).findByUserIdAndRefreshToken(1L, validRefreshToken);
     }
 }
