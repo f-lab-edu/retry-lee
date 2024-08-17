@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
@@ -53,6 +54,12 @@ public class AuthTest extends BaseE2eTest {
                 .grade("Silver")
                 .build();
         userRepository.save(user);
+    }
+
+    @AfterEach
+    void cleanUpDatabase() {
+        userRepository.deleteAll();
+        accountRepository.deleteAll();
     }
 
     @Test
@@ -167,7 +174,7 @@ public class AuthTest extends BaseE2eTest {
     @Test
     @DisplayName("Fail to login with incorrect password")
     public void loginFailWithIncorrectPassword() {
-        UserSignInReq request = new UserSignInReq(EMAIL, "WrongPassword11!!");
+        UserSignInReq request = new UserSignInReq(EMAIL, "WrongPassword11!");
 
         ResponseEntity<String> response = testRestTemplate.postForEntity(
                 "/auth/signIn",
