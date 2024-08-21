@@ -3,6 +3,7 @@ package com.user.unitTest.service;
 import com.storage.entity.Account;
 import com.storage.entity.User;
 import com.storage.repository.AccountRepository;
+import com.storage.repository.AdminRepository;
 import com.storage.repository.UserRepository;
 import com.user.dto.request.TokenRequestDto;
 import com.user.dto.request.UserRequestDto.UserRegisterReq;
@@ -40,6 +41,9 @@ public class AuthServiceUnitTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AdminRepository adminRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -88,7 +92,7 @@ public class AuthServiceUnitTest {
 
     @Test
     @DisplayName("Successfully sign in")
-    void signInSuccess() {
+    void successSignInAsUser() {
         // Given
         UserSignInReq req = new UserSignInReq("test@email.com", "Password1!");
         Account account = Account.builder()
@@ -104,17 +108,18 @@ public class AuthServiceUnitTest {
                 .build();
 
         // When
-        when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(req.getPassword(), user.getAccount().getPassword())).thenReturn(true);
-        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), UserType.USER, anyLong(), any(Date.class))).thenReturn("accessToken");
-        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), UserType.USER, anyLong(), any(Date.class))).thenReturn("refreshToken");
-
-        SignInRes result = authService.signIn(req);
+        when(accountRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(account));
+        when(passwordEncoder.matches(req.getPassword(), account.getPassword())).thenReturn(true);
+        when(adminRepository.existsByAccountId(account.getAccountId())).thenReturn(false);
+        when(userRepository.findByAccountId(account.getAccountId())).thenReturn(Optional.of(user));
+        when(jwtTokenProvider.generateToken(any(), any(), any(), any())).thenReturn("token");
 
         // Then
+        SignInRes result = authService.signIn(req);
         assertNotNull(result);
-        assertEquals("accessToken", result.getAccessToken());
-        assertEquals("refreshToken", result.getRefreshToken());
+        assertEquals("USER", result.getUserType());
+        assertEquals("token", result.getAccessToken());
+        assertEquals("token", result.getRefreshToken());
     }
 
     @Test
@@ -124,31 +129,24 @@ public class AuthServiceUnitTest {
         UserSignInReq req = new UserSignInReq("test@email.com", "Password1!");
 
         // When & Then
-        when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.empty());
+        when(accountRepository.findByEmail(req.getEmail())).thenReturn(Optional.empty());
 
         assertThrows(CustomException.class, () -> authService.signIn(req));
     }
 
     @Test
     @DisplayName("Fail to sign in with incorrect password")
-    void failSignInIncorrectPassword() {
+    void failSignInWithIncorrectPassword() {
         // Given
-        UserSignInReq req = new UserSignInReq("test@email.com", "Password1!");
+        UserSignInReq req = new UserSignInReq("test@email.com", "WrongPassword!");
         Account account = Account.builder()
-                .accountId(1L)
-                .email("test@email.com")
-                .password("encodedPassword")
-                .build();
-        User user = User.builder()
-                .userId(1L)
-                .account(account)
-                .nickname("testUser")
-                .grade("NORMAL")
+                .email(req.getEmail())
+                .password("$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG")
                 .build();
 
         // When & Then
-        when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(req.getPassword(), user.getAccount().getPassword())).thenReturn(false);
+        when(accountRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(account));
+        when(passwordEncoder.matches(req.getPassword(), account.getPassword())).thenReturn(false);
 
         assertThrows(CustomException.class, () -> authService.signIn(req));
     }
@@ -162,10 +160,11 @@ public class AuthServiceUnitTest {
 
         // When
         when(jwtTokenProvider.validateToken("validRefreshToken")).thenReturn(true);
-        when(jwtTokenProvider.getClaim("validRefreshToken", "userId", Long.class)).thenReturn(1L);
+        when(jwtTokenProvider.getClaim("validRefreshToken", "id", Long.class)).thenReturn(1L);
+        when(jwtTokenProvider.getClaim("validRefreshToken", "userType", UserType.class)).thenReturn(UserType.USER);
         when(userRepository.findByUserIdAndRefreshToken(1L, "validRefreshToken")).thenReturn(Optional.of(user));
-        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), UserType.USER, eq(1L), any(Date.class))).thenReturn("newAccessToken");
-        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), UserType.USER, eq(1L), any(Date.class))).thenReturn("newRefreshToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), eq(UserType.USER), eq(1L), any(Date.class))).thenReturn("newAccessToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), eq(UserType.USER), eq(1L), any(Date.class))).thenReturn("newRefreshToken");
 
         TokenResponseDto response = authService.getAccessTokenByRefreshToken(req);
 
@@ -198,7 +197,8 @@ public class AuthServiceUnitTest {
 
         // When & Then
         when(jwtTokenProvider.validateToken(validRefreshToken)).thenReturn(true);
-        when(jwtTokenProvider.getClaim(validRefreshToken, "userId", Long.class)).thenReturn(1L);
+        when(jwtTokenProvider.getClaim(validRefreshToken, "id", Long.class)).thenReturn(1L);
+        when(jwtTokenProvider.getClaim("validRefreshToken", "userType", UserType.class)).thenReturn(UserType.USER);
         when(userRepository.findByUserIdAndRefreshToken(1L, validRefreshToken)).thenReturn(Optional.empty());
 
         assertThrows(CustomException.class, () -> authService.getAccessTokenByRefreshToken(req));

@@ -28,12 +28,14 @@ public class JwtTokenProviderTest {
     @Test
     @DisplayName("Successfully generate access token")
     void generateAccessTokenSuccess() {
-        Long userId = 1L;
-        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, userId, new Date());
+        Long id = 1L;
+        String userType = "USER";
+        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, id, new Date());
 
         assertNotNull(token);
         assertTrue(jwtTokenProvider.validateToken(token));
-        assertEquals(userId, jwtTokenProvider.getClaim(token, "userId", Long.class));
+        assertEquals(id, jwtTokenProvider.getClaim(token, "id", Long.class));
+        assertEquals(userType, jwtTokenProvider.getClaim(token, "userType", String.class));
         assertEquals("ACCESS", jwtTokenProvider.getClaim(token, "sub", String.class));
     }
 
@@ -86,13 +88,16 @@ public class JwtTokenProviderTest {
     @Test
     @DisplayName("Successfully get claim from token")
     void getClaimFromToken() {
-        Long userId = 1L;
-        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, userId, new Date());
+        Long id = 1L;
+        String userType = "USER";
+        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, id, new Date());
 
-        Long extractedUserId = jwtTokenProvider.getClaim(token, "userId", Long.class);
+        Long extractedUserId = jwtTokenProvider.getClaim(token, "id", Long.class);
+        String extractedUserType = jwtTokenProvider.getClaim(token, "userType", String.class);
         String tokenType = jwtTokenProvider.getClaim(token, "sub", String.class);
 
-        assertEquals(userId, extractedUserId);
+        assertEquals(id, extractedUserId);
+        assertEquals(userType, extractedUserType);
         assertEquals("ACCESS", tokenType);
     }
 
