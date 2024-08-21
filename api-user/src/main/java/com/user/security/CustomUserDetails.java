@@ -1,8 +1,12 @@
 package com.user.security;
 
+import com.storage.entity.Account;
+import com.storage.entity.Admin;
 import com.storage.entity.User;
+import com.user.enums.UserType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
@@ -11,29 +15,37 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final User user;
+    private final Account account;
+    private final UserType userType;
+    private final Long id;
 
-    /**
-     * Admin 에서는 권한 관련해서 생각해야할게 있지만, ( 예를 들어 admin, user 둘다 권한 부여 등 )
-     * user에서는 권한은 user 하나면 되기 때문에 "role_user" 로 고정
-     *
-     * @return
-     */
+    public static CustomUserDetails of(User user) {
+        return new CustomUserDetails(user.getAccount(), UserType.USER, user.getUserId());
+    }
+
+    public static CustomUserDetails of(Admin admin) {
+        return new CustomUserDetails(admin.getAccount(), UserType.ADMIN, admin.getAdminId());
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> collection = new ArrayList<>();
-        collection.add((GrantedAuthority) () -> "ROLE_USER");
-
-        return collection;
+        Collection<GrantedAuthority> authorities = new ArrayList<>();
+        if (userType == UserType.ADMIN) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        } else {
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        }
+        return authorities;
     }
 
     @Override
     public String getPassword() {
-        return user.getAccount().getPassword();
+        return account.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return user.getAccount().getEmail();
+        return account.getEmail();
     }
 }

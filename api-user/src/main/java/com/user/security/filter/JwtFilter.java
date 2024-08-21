@@ -1,5 +1,7 @@
 package com.user.security.filter;
 
+import com.user.exception.CustomException;
+import com.user.exception.type.ErrorCode;
 import com.user.security.CustomUserDetailService;
 import com.user.security.CustomUserDetails;
 import com.user.utils.jwt.JwtTokenProvider;
@@ -8,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
@@ -16,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @RequiredArgsConstructor
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -27,12 +31,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token)) {
             try {
-                String email = jwtTokenProvider.getClaim(token, "email", String.class);
+                Long id = jwtTokenProvider.getClaim(token, "id", Long.class);
+                String userType = jwtTokenProvider.getClaim(token, "userType", String.class);
+                String email = customUserDetailService.findEmail(userType, id);
                 CustomUserDetails userDetails = (CustomUserDetails) customUserDetailService.loadUserByUsername(email);
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             } catch (Exception e) {
-                // TODO  Custom Exception 완료 후 추가
+                log.error("Error during authentication: {} ", e.getMessage());
+                throw new CustomException(ErrorCode.ERROR_BE1005);
             }
         }
 

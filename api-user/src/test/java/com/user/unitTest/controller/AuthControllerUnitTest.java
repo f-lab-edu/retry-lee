@@ -52,7 +52,7 @@ public class AuthControllerUnitTest {
     @Test
     @DisplayName("정상적으로 회원가입에 성공한다.")
     void successSignup() throws Exception {
-        UserRegisterReq req = new UserRegisterReq("test@example.com", "Testtest11!!", "yogurt");
+        UserRegisterReq req = new UserRegisterReq("test@example.com", "Testtest11!!", "yogurt", false);
 
         doNothing().when(authService).register(any(UserRegisterReq.class));
 
@@ -65,7 +65,7 @@ public class AuthControllerUnitTest {
     @Test
     @DisplayName("중복된 이메일일 경우 회원가입에 실패한다.")
     void signupWithExistingEmail() throws Exception {
-        UserRegisterReq req = new UserRegisterReq("existing@example.com", "Password123!", "yogurt");
+        UserRegisterReq req = new UserRegisterReq("existing@example.com", "Password123!", "yogurt", false);
 
         doThrow(new CustomException(ErrorCode.ERROR_BE1001)).when(authService).register(any(UserRegisterReq.class));
 
@@ -79,7 +79,7 @@ public class AuthControllerUnitTest {
     @Test
     @DisplayName("이메일의 형식이 올바르지 않은 경우 작성된 메시지가 반환된다.")
     void signupWithInvalidEmail() throws Exception {
-        UserRegisterReq req = new UserRegisterReq("invalidemail", "Password123!", "yogurt");
+        UserRegisterReq req = new UserRegisterReq("invalidemail", "Password123!", "yogurt", false);
 
         mockMvc.perform(post("/auth/signUp")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +91,7 @@ public class AuthControllerUnitTest {
     @Test
     @DisplayName("비밀번호의 형식이 올바르지 않은 경우 작성된 메시지가 반환된다.")
      void signupWithInvalidPassword() throws Exception {
-        UserRegisterReq req = new UserRegisterReq("test@example.com", "weak", "yogurt");
+        UserRegisterReq req = new UserRegisterReq("test@example.com", "weak", "yogurt", false);
 
         mockMvc.perform(post("/auth/signUp")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,7 +103,7 @@ public class AuthControllerUnitTest {
     @Test
     @DisplayName("닉네임의 글자 길이가 범위에 맞지 않는 경우 작성된 메시지가 반환된다.")
     void signupWithInvalidNickname() throws Exception {
-        UserRegisterReq req = new UserRegisterReq("test@example.com", "Password123!", "a");
+        UserRegisterReq req = new UserRegisterReq("test@example.com", "Password123!", "a", false);
 
         mockMvc.perform(post("/auth/signUp")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -116,7 +116,7 @@ public class AuthControllerUnitTest {
     @DisplayName("Successfully sign in")
     void successSignIn() throws Exception {
         UserSignInReq req = new UserSignInReq("test@example.com", "Password123!");
-        SignInRes res = new SignInRes("accessToken", "refreshToken");
+        SignInRes res = new SignInRes("accessToken", "refreshToken", "USER");
 
         when(authService.signIn(any(UserSignInReq.class))).thenReturn(res);
 

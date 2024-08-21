@@ -66,7 +66,7 @@ public class AuthTest extends BaseE2eTest {
     @DisplayName("Successfully register an account")
     public void registerAccount() {
         // Create account registration request data
-        UserRegisterReq request = new UserRegisterReq("testSuccess@test.com", "Testtest11!!","yogurt");
+        UserRegisterReq request = new UserRegisterReq("testSuccess@test.com", "Testtest11!!","yogurt", false);
 
         // Send POST request
         ResponseEntity<String> response = testRestTemplate.postForEntity(
@@ -82,7 +82,7 @@ public class AuthTest extends BaseE2eTest {
     @DisplayName("Fail to register an account with duplicate email")
     public void failRegisterAccountWithDuplicateEmail() {
         // Create account registration request data with existing email
-        UserRegisterReq request = new UserRegisterReq("test@test.com", "Testtest11!!", "yogurt");
+        UserRegisterReq request = new UserRegisterReq("test@test.com", "Testtest11!!", "yogurt", false);
 
         // Send POST request
         ResponseEntity<String> response = testRestTemplate.postForEntity(
@@ -100,7 +100,7 @@ public class AuthTest extends BaseE2eTest {
     @DisplayName("Fail to register an account with invalid email format")
     public void invalidEmailFormat() {
         // Create account registration request data with existing email
-        UserRegisterReq request = new UserRegisterReq("invalidemail", "Testtest11!!", "yogurt");
+        UserRegisterReq request = new UserRegisterReq("invalidemail", "Testtest11!!", "yogurt", false);
         ResponseEntity<String> response = testRestTemplate.postForEntity(
                 "/auth/signUp",
                 request,
@@ -113,7 +113,7 @@ public class AuthTest extends BaseE2eTest {
     @Test
     @DisplayName("Fail to register an account with invalid password format")
     public void invalidPasswordFormat() {
-        UserRegisterReq request = new UserRegisterReq("test@test.com", "weak", "yogurt");
+        UserRegisterReq request = new UserRegisterReq("test@test.com", "weak", "yogurt", false);
         ResponseEntity<String> response = testRestTemplate.postForEntity(
                 "/auth/signUp",
                 request,
@@ -126,7 +126,7 @@ public class AuthTest extends BaseE2eTest {
     @Test
     @DisplayName("Fail to register an account with invalid nickname length")
     public void invalidNicknameLength() {
-        UserRegisterReq request = new UserRegisterReq("test@test.com", "Testtest11!!", "a");
+        UserRegisterReq request = new UserRegisterReq("test@test.com", "Testtest11!!", "a", false);
         ResponseEntity<String> response = testRestTemplate.postForEntity(
                 "/auth/signUp",
                 request,

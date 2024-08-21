@@ -1,6 +1,7 @@
 package com.user.unitTest.util;
 
-import com.user.utils.enums.TokenType;
+import com.user.enums.TokenType;
+import com.user.enums.UserType;
 import com.user.utils.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -28,7 +29,7 @@ public class JwtTokenProviderTest {
     @DisplayName("Successfully generate access token")
     void generateAccessTokenSuccess() {
         Long userId = 1L;
-        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, userId, new Date());
+        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, userId, new Date());
 
         assertNotNull(token);
         assertTrue(jwtTokenProvider.validateToken(token));
@@ -39,7 +40,7 @@ public class JwtTokenProviderTest {
     @Test
     @DisplayName("Successfully validate token")
     void validateTokenSuccess() {
-        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, 1L, new Date());
+        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, 1L, new Date());
         assertTrue(jwtTokenProvider.validateToken(token));
     }
 
@@ -48,7 +49,7 @@ public class JwtTokenProviderTest {
     void failValidateByExpiredToken() {
         Long userId = 1L;
         Date pastDate = new Date(System.currentTimeMillis() - 1000 * 60 * 60); // 1시간 전
-        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, userId, pastDate);
+        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, userId, pastDate);
 
         assertFalse(jwtTokenProvider.validateToken(token));
     }
@@ -68,6 +69,7 @@ public class JwtTokenProviderTest {
         request.addHeader("Authorization", "Bearer " + token);
 
         String resolvedToken = jwtTokenProvider.resolveToken(request);
+        System.out.println(resolvedToken);
         assertEquals(token, resolvedToken);
     }
 
@@ -85,7 +87,7 @@ public class JwtTokenProviderTest {
     @DisplayName("Successfully get claim from token")
     void getClaimFromToken() {
         Long userId = 1L;
-        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, userId, new Date());
+        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER, userId, new Date());
 
         Long extractedUserId = jwtTokenProvider.getClaim(token, "userId", Long.class);
         String tokenType = jwtTokenProvider.getClaim(token, "sub", String.class);
@@ -97,7 +99,7 @@ public class JwtTokenProviderTest {
     @Test
     @DisplayName("Fail to get non-existent claim from token")
     void failGetClaimFromTokenByNonExistentClaim() {
-        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, 1L, new Date());
+        String token = jwtTokenProvider.generateToken(TokenType.ACCESS, UserType.USER,1L, new Date());
 
         assertNull(jwtTokenProvider.getClaim(token, "nonExistentClaim", String.class));
     }

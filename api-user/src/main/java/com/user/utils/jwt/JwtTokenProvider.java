@@ -1,6 +1,7 @@
 package com.user.utils.jwt;
 
-import com.user.utils.enums.TokenType;
+import com.user.enums.TokenType;
+import com.user.enums.UserType;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -36,10 +37,11 @@ public class JwtTokenProvider {
                 .get(claimName, requiredType);
     }
 
-    public String generateToken(TokenType tokenType, Long userId, Date currentDate){
+    public String generateToken(TokenType tokenType, UserType userType, Long id, Date currentDate){
         return Jwts.builder()
                 .subject(String.valueOf(tokenType))
-                .claim("userId", userId)
+                .claim("userType", userType)
+                .claim("id", id)
                 .issuedAt(currentDate)
                 .expiration(new Date(currentDate.getTime() + tokenType.getExpiredMs()))
                 .signWith(secretKey)

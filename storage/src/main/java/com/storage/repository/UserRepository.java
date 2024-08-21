@@ -14,4 +14,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     Optional<User> findByUserIdAndRefreshToken(Long id, String refreshToken);
+
+    @Query("select u from User u" +
+            " join fetch u.account a" +
+            " where a.accountId = :accountId")
+    Optional<User> findByAccountId(Long accountId);
+
 }

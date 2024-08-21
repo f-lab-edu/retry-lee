@@ -11,7 +11,8 @@ import com.user.dto.response.TokenResponseDto;
 import com.user.dto.response.UserResponseDto.SignInRes;
 import com.user.exception.CustomException;
 import com.user.service.AuthService;
-import com.user.utils.enums.TokenType;
+import com.user.enums.TokenType;
+import com.user.enums.UserType;
 import com.user.utils.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -53,7 +54,7 @@ public class AuthServiceUnitTest {
     @DisplayName("Successfully register an account")
     void successRegister() {
         // Given
-        UserRegisterReq request = new UserRegisterReq("test@test.com", "Password1!", "testuser");
+        UserRegisterReq request = new UserRegisterReq("test@test.com", "Password1!", "testuser", false);
 
         // When
         when(accountRepository.existsByEmail(request.getEmail())).thenReturn(false);
@@ -75,7 +76,7 @@ public class AuthServiceUnitTest {
     @DisplayName("Fail to register an account with duplicate email")
     void registerWithExistingEmail() {
         // Given
-        UserRegisterReq request = new UserRegisterReq("existing@test.com", "Password1!", "testuser");
+        UserRegisterReq request = new UserRegisterReq("existing@test.com", "Password1!", "testuser", false);
 
         // When & Then
         when(accountRepository.existsByEmail(request.getEmail())).thenReturn(true);
@@ -105,8 +106,8 @@ public class AuthServiceUnitTest {
         // When
         when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(req.getPassword(), user.getAccount().getPassword())).thenReturn(true);
-        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), anyLong(), any(Date.class))).thenReturn("accessToken");
-        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), anyLong(), any(Date.class))).thenReturn("refreshToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), UserType.USER, anyLong(), any(Date.class))).thenReturn("accessToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), UserType.USER, anyLong(), any(Date.class))).thenReturn("refreshToken");
 
         SignInRes result = authService.signIn(req);
 
@@ -163,8 +164,8 @@ public class AuthServiceUnitTest {
         when(jwtTokenProvider.validateToken("validRefreshToken")).thenReturn(true);
         when(jwtTokenProvider.getClaim("validRefreshToken", "userId", Long.class)).thenReturn(1L);
         when(userRepository.findByUserIdAndRefreshToken(1L, "validRefreshToken")).thenReturn(Optional.of(user));
-        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), eq(1L), any(Date.class))).thenReturn("newAccessToken");
-        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), eq(1L), any(Date.class))).thenReturn("newRefreshToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.ACCESS), UserType.USER, eq(1L), any(Date.class))).thenReturn("newAccessToken");
+        when(jwtTokenProvider.generateToken(eq(TokenType.REFRESH), UserType.USER, eq(1L), any(Date.class))).thenReturn("newRefreshToken");
 
         TokenResponseDto response = authService.getAccessTokenByRefreshToken(req);
 

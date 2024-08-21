@@ -12,5 +12,6 @@ public class UserResponseDto {
     public static class SignInRes{
         String accessToken;
         String refreshToken;
+        String userType;
     }
 }
