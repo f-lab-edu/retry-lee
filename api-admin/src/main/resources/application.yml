@@ -6,5 +6,9 @@ spring:
   profiles:
     active: local
 
+  config:
+    import:
+      - db-config.yml
+
 server:
   port: 8082

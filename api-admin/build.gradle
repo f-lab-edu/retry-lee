@@ -6,6 +6,32 @@ dependencies {
     implementation(project(":storage"))
     implementation(project(":support"))
     implementation("org.springframework.boot:spring-boot-starter-web")
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+}
+
+//전체 테스트
+test {
+    description = 'Runs the total tests.'
+    useJUnitPlatform()
+}
+
+//유닛 테스트
+tasks.register('UnitTest', Test) {
+    group = 'verification'
+    description = 'Runs the Unit tests.'
+    useJUnitPlatform {
+        includeTags 'UnitTest'
+    }
+}
+
+//통합 테스트
+tasks.register('E2eTest', Test) {
+    group = 'verification'
+    description = 'Runs the E2e tests.'
+    useJUnitPlatform {
+        includeTags 'E2eTest'
+    }
 }
