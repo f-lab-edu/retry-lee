@@ -4,6 +4,8 @@ import com.admin.dto.request.AccommodationReqDto;
 import com.admin.dto.request.AccommodationReqDto.RoomReqDto;
 import com.admin.dto.response.AccommodationResDto;
 import com.admin.dto.response.AccommodationResDto.RoomResDto;
+import com.admin.exception.CustomException;
+import com.admin.exception.type.ErrorCode;
 import com.storage.entity.Accommodation;
 import com.storage.entity.Room;
 import com.storage.repository.AccommodationRepository;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +26,24 @@ public class AccommodationService {
 
     @Transactional
     public AccommodationResDto registerAccommodation(AccommodationReqDto req) {
+
+        BigDecimal latitude = req.getLatitude();
+        BigDecimal longitude = req.getLongitude();
+        BigDecimal distance = new BigDecimal("0.001"); // 약 100m 반경
+
+        BigDecimal minLat = latitude.subtract(distance);
+        BigDecimal maxLat = latitude.add(distance);
+        BigDecimal minLon = longitude.subtract(distance);
+        BigDecimal maxLon = longitude.add(distance);
+
+        List<Accommodation> nearbyAccommodations = accommodationRepository.findNearbyAccommodations(
+                minLat, maxLat, minLon, maxLon
+        );
+
+        if(!nearbyAccommodations.isEmpty()) {
+            throw new CustomException(ErrorCode.ERROR_BE1001);
+        }
+
         // 1. Accommodation 엔티티로 변환
         Accommodation accommodation = Accommodation.builder()
                 .nameEn(req.getNameEn())
