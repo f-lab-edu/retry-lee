@@ -18,11 +18,25 @@ public class Room extends BaseEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accommodation_id")
     private Accommodation accommodation;
+
+    @Column(nullable = false)
     private String roomType;
+
+    @Column(nullable = false)
     private String viewType;
+
+    @Column(nullable = false)
     private String bedType;
-    private BigDecimal squareMeter;
-    private int capacity;
+
+    @Column(nullable = false)
+    private Double squareMeter;
+
+    @Column(nullable = false)
+    private Integer capacity;
+
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
-    private int stock;
+
+    @Column(nullable = false)
+    private Integer stock;
 }
