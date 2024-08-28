@@ -1,5 +1,8 @@
 package com.admin.dto.request;
 
+import com.admin.enums.room.BedType;
+import com.admin.enums.room.RoomType;
+import com.admin.enums.room.ViewType;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,13 +14,15 @@ import java.util.List;
 @AllArgsConstructor
 public class AccommodationReqDto {
     @NotBlank(message = "숙소 이름은 필수입니다.")
-    private String nameEn;
+    private String name;
 
     private String info;
 
-    @NotBlank(message = "국가는 필수입니다.")
-    private String country;
+    @NotBlank(message = "국가명은 필수입니다.")
+    private String countryName;
 
+    @NotBlank(message = "국가코드는 필수 입니다.")
+    private String countryCode;
     @NotBlank(message = "주/도는 필수입니다.")
     private String state;
 
@@ -49,21 +54,20 @@ public class AccommodationReqDto {
     @AllArgsConstructor
     public static class RoomReqDto {
         @NotBlank(message = "방 타입은 필수입니다.")
-        private String roomType;
+        private RoomType roomType;
 
         @NotBlank(message = "뷰 타입은 필수입니다.")
-        private String viewType;
+        private ViewType viewType;
 
         @NotBlank(message = "침대 타입은 필수입니다.")
-        private String bedType;
+        private BedType bedType;
 
         /**
          * 숙소 면적 표시 정책에 따라 수정 가능.
          */
         @NotNull(message = "면적은 필수입니다.")
-        @DecimalMin(value = "1.0", message = "면적은 1.0㎡ 이상이어야 합니다.")
-        @Digits(integer = 4, fraction = 1, message = "면적은 소수점 첫째자리까지 입력 가능합니다.")
-        private BigDecimal squareMeter;
+        @Min(value = 1, message = "면적은 1.0㎡ 이상이어야 합니다.")
+        private Double squareMeter;
 
         @NotNull(message = "수용 인원은 필수입니다.")
         @Min(value = 1, message = "수용 인원은 최소 1명 이상이어야 합니다.")
