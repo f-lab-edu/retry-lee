@@ -15,6 +15,7 @@ public class Accommodation extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long accommodationId;
+
     @Column(nullable = false)
     private String name;
 
@@ -30,6 +31,7 @@ public class Accommodation extends BaseEntity {
     @Column(nullable = false)
     private String city;
 
+    @Column(nullable = false)
     private String district;
 
     @Column(nullable = false)
@@ -38,10 +40,8 @@ public class Accommodation extends BaseEntity {
     @Column(nullable = false)
     private String postalCode;
 
-    @Column(nullable = false, precision = 8, scale = 6)
     private double latitude;
 
-    @Column(nullable = false, precision = 9, scale = 6)
     private double longitude;
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL)

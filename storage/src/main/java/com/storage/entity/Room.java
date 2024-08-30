@@ -28,15 +28,12 @@ public class Room extends BaseEntity{
     @Column(nullable = false)
     private String bedType;
 
-    @Column(nullable = false)
     private double squareMeter;
 
-    @Column(nullable = false)
     private int capacity;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false)
     private int stock;
 }
