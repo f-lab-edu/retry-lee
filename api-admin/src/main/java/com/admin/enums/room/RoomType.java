@@ -9,7 +9,6 @@ public enum RoomType {
     DELUXE("Deluxe Room"),
     SUITE("Suite Room");
 
-
     private final String description;
 
     RoomType(String description) {
