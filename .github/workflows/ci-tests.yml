@@ -35,7 +35,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: ./gradlew build -x test --no-daemon --refresh-dependencies --stacktrace
 
       - name: Run Unit Tests
         run: ./gradlew UnitTest
