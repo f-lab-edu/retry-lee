@@ -3,7 +3,6 @@ package com.storage.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,9 +25,6 @@ public class Accommodation extends BaseEntity {
     private String countryName;
 
     @Column(nullable = false)
-    private String countryCode;
-
-    @Column(nullable = false)
     private String state;
 
     @Column(nullable = false)
@@ -43,10 +39,10 @@ public class Accommodation extends BaseEntity {
     private String postalCode;
 
     @Column(nullable = false, precision = 8, scale = 6)
-    private BigDecimal latitude;
+    private double latitude;
 
     @Column(nullable = false, precision = 9, scale = 6)
-    private BigDecimal longitude;
+    private double longitude;
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL)
     @Builder.Default
