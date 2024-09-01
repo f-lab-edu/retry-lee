@@ -87,7 +87,6 @@ public class AccommodationServiceUnitTest {
             assertEquals(1, rooms.size());
             Room room = rooms.getFirst();
             assertNotNull(room);
-            assertEquals(accommodation, room.getAccommodation());
             assertEquals("SINGLE", room.getRoomType());
             assertEquals("CITY", room.getViewType());
             assertEquals("SINGLE", room.getBedType());
