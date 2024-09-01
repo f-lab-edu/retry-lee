@@ -3,6 +3,7 @@ package com.admin.dto.request;
 import com.admin.enums.room.BedType;
 import com.admin.enums.room.RoomType;
 import com.admin.enums.room.ViewType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,18 +45,19 @@ public class AccommodationReqDto {
     private double longitude;
 
     @NotEmpty(message = "At least one room information is required.")
+    @Valid
     private List<RoomReqDto> rooms;
 
     @Getter
     @AllArgsConstructor
     public static class RoomReqDto {
-        @NotBlank(message = "Room type is required.")
+        @NotNull(message = "Room type is required.")
         private RoomType roomType;
 
-        @NotBlank(message = "View type is required.")
+        @NotNull(message = "View type is required.")
         private ViewType viewType;
 
-        @NotBlank(message = "Bed type is required.")
+        @NotNull(message = "Bed type is required.")
         private BedType bedType;
 
         @Min(value = 1, message = "Area must be at least 1.0 square meters.")

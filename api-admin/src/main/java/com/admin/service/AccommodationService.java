@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AccommodationService {
@@ -16,6 +19,20 @@ public class AccommodationService {
 
     @Transactional
     public void registerAccommodation(AccommodationReqDto req) {
+
+        List<Room> rooms = new ArrayList<>();
+        for (RoomReqDto roomReq : req.getRooms()) {
+            Room room = Room.builder()
+                    .roomType(roomReq.getRoomType().name())
+                    .viewType(roomReq.getViewType().name())
+                    .bedType(roomReq.getBedType().name())
+                    .squareMeter(roomReq.getSquareMeter())
+                    .capacity(roomReq.getCapacity())
+                    .price(roomReq.getPrice())
+                    .stock(roomReq.getStock())
+                    .build();
+            rooms.add(room);
+        }
 
         Accommodation accommodation = Accommodation.builder()
                 .name(req.getName())
@@ -28,21 +45,8 @@ public class AccommodationService {
                 .postalCode(req.getPostalCode())
                 .latitude(req.getLatitude())
                 .longitude(req.getLongitude())
+                .rooms(rooms)  // 미리 생성한 Room 리스트를 설정
                 .build();
-
-        for (RoomReqDto roomReq : req.getRooms()) {
-            Room room = Room.builder()
-                    .accommodation(accommodation)
-                    .roomType(roomReq.getRoomType().name())
-                    .viewType(roomReq.getViewType().name())
-                    .bedType(roomReq.getBedType().name())
-                    .squareMeter(roomReq.getSquareMeter())
-                    .capacity(roomReq.getCapacity())
-                    .price(roomReq.getPrice())
-                    .stock(roomReq.getStock())
-                    .build();
-            accommodation.getRooms().add(room);
-        }
 
         accommodationRepository.save(accommodation);
     }
