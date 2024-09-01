@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: api-admin-test
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: create-only
+        format_sql: true
+        show_sql: true
